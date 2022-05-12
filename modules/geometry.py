@@ -51,12 +51,19 @@ class Slab:
         if self.left_boundary_condition == 'reflecting':
             corresponding_negative_angle = np.where(self.mu == -self.mu[angle])[0][0]
             self.left_boundary[angle] = self.left_boundary[corresponding_negative_angle]
+        elif self.left_boundary_condition == 'vacuum':
+            self.left_boundary[:] = 0
+        else:   # Incident
+            forwardmost_mu = np.argmax(self.mu)
+            self.left_boundary[forwardmost_mu] = self.left_boundary_condition
         return self.left_boundary[angle]
 
     def implement_right_boundary_condition(self, angle):
         if self.right_boundary_condition == 'reflecting':
             corresponding_positive_angle = np.where(self.mu == -self.mu[angle])[0][0]
             self.right_boundary[angle] = self.left_boundary[corresponding_positive_angle]
+        elif self.right_boundary_condition == 'vacuum':
+            self.right_boundary[:] = 0
         return self.right_boundary[angle]
 
     def create_region(self, material_type, length, x_left, total_xs, scatter_xs):
@@ -116,7 +123,7 @@ class Slab:
             self.right_boundary[angle] = one_direction_angular_flux[1, self.num_cells-1]
         else:
             psi_right_edge = self.implement_right_boundary_condition(angle)
-            for cell in range(self.num_cells):
+            for cell in reversed(range(self.num_cells)):
                 one_direction_angular_flux[:, cell] = solve_backward_linear_system()
                 psi_right_edge = one_direction_angular_flux[0, cell]         # Right edge for next cell is left edge of current cell
             self.left_boundary[angle] = one_direction_angular_flux[0, self.num_cells-1]
