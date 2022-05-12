@@ -10,7 +10,7 @@ def calculate_updated_scalar_flux(total_source, slab):
 
 
 def check_scalar_flux_convergence(new_scalar_flux, slab):
-    if np.max(np.abs(new_scalar_flux - slab.scalar_flux)) <= slab.tolerance:
+    if np.max(np.abs(new_scalar_flux - slab.scalar_flux) / new_scalar_flux) <= slab.tolerance:
         return True
     else:
         return False
@@ -20,7 +20,7 @@ def transport(slab):
     slab.create_material_data_arrays()
 
     converged = False
-    new_scalar_flux = np.zeros((2, slab.num_cells))
+    new_scalar_flux = np.ones((2, slab.num_cells))
     source_iterations = 0
     # Perform source iteration to converge on one-group scalar flux
     while not converged:

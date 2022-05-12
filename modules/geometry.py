@@ -26,6 +26,7 @@ class Slab:
         self.right_boundary = np.zeros(self.num_angles)
 
     def update_boundaries(self):
+        # **** THis is useless and I'm not using it right now ****
         # Default defined as vacuum boundary
         if self.left_boundary_condition == 'reflecting':
             # This assumes that the angles are listed by all positive, then all negative
