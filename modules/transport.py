@@ -30,7 +30,7 @@ def calculate_one_direction_angular_flux():
 
     one_direction_angular_flux = np.zeros((num_cells,2))
     if mu > 0:
-        psi_left_edge = psi_left_indcident
+        psi_left_edge = psi_left_incident
         for i in range(num_cells):
             inside_cell_angular_flux = solve_forward_linear_system(psi_left_edge)
             psi_left_edge = inside_cell_angular_flux[1]
@@ -64,10 +64,11 @@ def check_scalar_flux_convergence():
         return False
 
 
-def main():
+def transport(slab):
+    total_xs, scatter_xs = slab.create_data_arrays()
     # All values will have a L and R in each cell
-    scalar_flux = np.ones(num_cells*2)
-    fixed_source = np.ones(num_cells*2)
+    scalar_flux = np.ones((slab.num_cells,2))
+    fixed_source = np.ones((slab.num_cells,2))
 
     converged = False
     source_iterations = 0
