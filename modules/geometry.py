@@ -20,26 +20,43 @@ class Slab:
         self.scatter_xs = None
         self.scalar_flux = np.ones((2, num_cells))
         # Boundary definitions
+        self.left_boundary_condition = left_boundary
+        self.right_boundary_condition = right_boundary
         self.left_boundary = np.zeros(self.num_angles)
         self.right_boundary = np.zeros(self.num_angles)
-        self.define_boundaries(left_boundary, right_boundary)
 
-    def define_boundaries(self, left, right):
+    def update_boundaries(self):
         # Default defined as vacuum boundary
-        if left == 'reflecting':
+        if self.left_boundary_condition == 'reflecting':
             # This assumes that the angles are listed by all positive, then all negative
-            num_positive_angles = int(self.num_angles / 2)
-            self.left_boundary[0:num_positive_angles] = self.left_boundary[num_positive_angles:self.num_angles]
-        elif left != 'vacuum':
+            num_angles_half = int(self.num_angles / 2)
+            self.left_boundary[0:num_angles_half] = self.left_boundary[num_angles_half:self.num_angles]
+        elif self.left_boundary_condition == 'vacuum':
+            self.left_boundary[:] = 0
+        else:
             forwardmost_mu = np.argmax(self.mu)
-            self.left_boundary[forwardmost_mu] = left
-        if right == 'reflecting':
+            self.left_boundary[forwardmost_mu] = self.left_boundary_condition
+        if self.right_boundary_condition == 'reflecting':
             # This assumes that the angles are listed by all positive, then all negative
-            num_positive_angles = int(self.num_angles / 2)
-            self.right_boundary[num_positive_angles:self.num_angles] = self.right_boundary[0:num_positive_angles]
-        elif right != 'vacuum':
+            num_angles_half = int(self.num_angles / 2)
+            self.right_boundary[num_angles_half:self.num_angles] = self.right_boundary[0:num_angles_half]
+        elif self.right_boundary_condition == 'vacuum':
+            self.right_boundary[:] = 0
+        else:
             backwardmost_mu = np.argmin(self.mu)
-            self.right_boundary[backwardmost_mu] = right
+            self.right_boundary[backwardmost_mu] = self.right_boundary_condition
+
+    def implement_left_boundary_condition(self, angle):
+        if self.left_boundary_condition == 'reflecting':
+            corresponding_negative_angle = np.where(self.mu == -self.mu[angle])[0][0]
+            self.left_boundary[angle] = self.left_boundary[corresponding_negative_angle]
+        return self.left_boundary[angle]
+
+    def implement_right_boundary_condition(self, angle):
+        if self.right_boundary_condition == 'reflecting':
+            corresponding_positive_angle = np.where(self.mu == -self.mu[angle])[0][0]
+            self.right_boundary[angle] = self.left_boundary[corresponding_positive_angle]
+        return self.right_boundary[angle]
 
     def create_region(self, material_type, length, x_left, total_xs, scatter_xs):
         self.region.append(Region(material_type, length, x_left, total_xs, scatter_xs))
@@ -62,12 +79,12 @@ class Slab:
 
     def perform_angular_flux_sweep(self, angle, total_source):
         def solve_forward_linear_system():
-            a_coeff = 2 * self.total_xs[i] * self.dx + 3 * self.mu[angle]
-            b_coeff = self.total_xs[i] * self.dx + 3 * self.mu[angle]
-            c_coeff = self.dx * (2*QL[i] + QR[i]) + 6 * self.mu[angle] * psi_left_edge
-            d_coeff = self.total_xs[i] * self.dx - 3 * self.mu[angle]
-            e_coeff = 2 * self.total_xs[i] * self.dx + 3 * self.mu[angle]
-            f_coeff = self.dx * (QL[i] + 2*QR[i])
+            a_coeff = 2 * self.total_xs[cell] * self.dx + 3 * self.mu[angle]
+            b_coeff = self.total_xs[cell] * self.dx + 3 * self.mu[angle]
+            c_coeff = self.dx * (2*QL[cell] + QR[cell]) + 6 * self.mu[angle] * psi_left_edge
+            d_coeff = self.total_xs[cell] * self.dx - 3 * self.mu[angle]
+            e_coeff = 2 * self.total_xs[cell] * self.dx + 3 * self.mu[angle]
+            f_coeff = self.dx * (QL[cell] + 2*QR[cell])
 
             coefficient_matrix = np.array([[a_coeff, b_coeff], [d_coeff, e_coeff]])
             rhs = np.array([c_coeff, f_coeff])
@@ -75,12 +92,12 @@ class Slab:
             return LD_angular_flux
 
         def solve_backward_linear_system():
-            a_coeff = 2 * self.total_xs[i] * self.dx - 3 * self.mu[angle]
-            b_coeff = self.total_xs[i] * self.dx + 3 * self.mu[angle]
-            c_coeff = self.dx * (2*QL[i] + QR[i])
-            d_coeff = self.total_xs[i] * self.dx - 3 * self.mu[angle]
-            e_coeff = 2 * self.total_xs[i] * self.dx - 3 * self.mu[angle]
-            f_coeff = self.dx * (QL[i] + 2*QR[i]) - 6 * self.mu[angle] * psi_right_edge
+            a_coeff = 2 * self.total_xs[cell] * self.dx - 3 * self.mu[angle]
+            b_coeff = self.total_xs[cell] * self.dx + 3 * self.mu[angle]
+            c_coeff = self.dx * (2*QL[cell] + QR[cell])
+            d_coeff = self.total_xs[cell] * self.dx - 3 * self.mu[angle]
+            e_coeff = 2 * self.total_xs[cell] * self.dx - 3 * self.mu[angle]
+            f_coeff = self.dx * (QL[cell] + 2*QR[cell]) - 6 * self.mu[angle] * psi_right_edge
 
             coefficient_matrix = np.array([[a_coeff, b_coeff], [d_coeff, e_coeff]])
             rhs = np.array([c_coeff, f_coeff])
@@ -91,23 +108,17 @@ class Slab:
         QL = total_source[0,:]
         QR = total_source[1,:]
         if self.mu[angle] > 0:
-            psi_left_edge = self.left_boundary[angle]
-            for i in range(self.num_cells):
-                inside_cell_angular_flux = solve_forward_linear_system()
-                one_direction_angular_flux[:, i] = inside_cell_angular_flux
-                psi_left_edge = inside_cell_angular_flux[1]
-
-            rightmost_angular_flux = one_direction_angular_flux[1, self.num_cells-1]
-            self.right_boundary[angle] = rightmost_angular_flux
+            psi_left_edge = self.implement_left_boundary_condition(angle)
+            for cell in range(self.num_cells):
+                one_direction_angular_flux[:, cell] = solve_forward_linear_system()
+                psi_left_edge = one_direction_angular_flux[1, cell]         # Left edge for next cell is right edge of current cell
+            self.right_boundary[angle] = one_direction_angular_flux[1, self.num_cells-1]
         else:
-            psi_right_edge = self.right_boundary[angle]
-            for i in range(self.num_cells):
-                inside_cell_angular_flux = solve_backward_linear_system()
-                one_direction_angular_flux[:, i] = inside_cell_angular_flux
-                psi_right_edge = inside_cell_angular_flux[0]
-
-            leftmost_angular_flux = one_direction_angular_flux[1, self.num_cells-1]
-            self.left_boundary[angle] = leftmost_angular_flux
+            psi_right_edge = self.implement_right_boundary_condition(angle)
+            for cell in range(self.num_cells):
+                one_direction_angular_flux[:, cell] = solve_backward_linear_system()
+                psi_right_edge = one_direction_angular_flux[0, cell]         # Right edge for next cell is left edge of current cell
+            self.left_boundary[angle] = one_direction_angular_flux[0, self.num_cells-1]
         return one_direction_angular_flux
 
 

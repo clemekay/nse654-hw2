@@ -1,5 +1,6 @@
 from modules.geometry import Slab, Region
 from modules.transport import transport as perform_transport_in
+from modules.plot_results import plot_scalar_flux
 
 
 # Problem definition info -
@@ -78,7 +79,7 @@ def optically_thick_diffusive_problem():
 def uniform_infinite_medium():
     length = 10
     num_cells = 100
-    num_angles = 2
+    num_angles = 8
     num_regions = 1
 
     slab = Slab(length=length, num_cells=num_cells, num_angles=num_angles, num_regions=num_regions,
@@ -86,6 +87,8 @@ def uniform_infinite_medium():
     slab.create_region(material_type='infinite uniform', length=length, x_left=0, total_xs=1, scatter_xs=0)
 
     perform_transport_in(slab)
+
+    plot_scalar_flux(slab)
 
 if __name__ == "__main__":
     uniform_infinite_medium()

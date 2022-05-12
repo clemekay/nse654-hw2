@@ -1,5 +1,5 @@
 import numpy as np
-from modules.plot_results import plot_scalar_flux
+
 
 def calculate_updated_scalar_flux(total_source, slab):
     angular_flux = np.zeros((2, slab.num_cells, slab.num_angles))
@@ -34,4 +34,3 @@ def transport(slab):
         converged = check_scalar_flux_convergence(new_scalar_flux, slab)
 
     print(source_iterations)
-    plot_scalar_flux(slab)
