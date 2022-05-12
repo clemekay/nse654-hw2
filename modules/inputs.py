@@ -77,12 +77,12 @@ def optically_thick_diffusive_problem():
 
 def uniform_infinite_medium():
     length = 10
-    num_cells = 10
+    num_cells = 100
     num_angles = 2
     num_regions = 1
 
     slab = Slab(length=length, num_cells=num_cells, num_angles=num_angles, num_regions=num_regions,
-                left_boundary='reflecting', right_boundary='reflecting', source=0)
+                left_boundary='reflecting', right_boundary='reflecting', source=5)
     slab.create_region(material_type='infinite uniform', length=length, x_left=0, total_xs=1, scatter_xs=0)
 
     perform_transport_in(slab)
