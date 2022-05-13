@@ -56,9 +56,6 @@ class Slab:
         else:   # Incident
             forwardmost_mu = np.argmax(self.mu)
             self.left_boundary[forwardmost_mu] = self.left_boundary_condition
-            if self.mu[angle] != self.mu[forwardmost_mu]:
-                corresponding_negative_angle = np.where(self.mu == -self.mu[angle])[0][0]
-                self.left_boundary[angle] = self.left_boundary[corresponding_negative_angle]
         return self.left_boundary[angle]
 
     def implement_right_boundary_condition(self, angle):

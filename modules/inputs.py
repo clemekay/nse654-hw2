@@ -84,7 +84,7 @@ def uniform_infinite_medium():
 
     slab = Slab(num_angles=num_angles, left_boundary='reflecting', right_boundary='reflecting', source=10)
     slab.create_region(material_type='infinite uniform', length=l1, num_cells=num_cells/2, x_left=0, total_xs=2, scatter_xs=0)
-    slab.create_region(material_type='infinite heterog', length=length-l1, num_cells=num_cells/2, x_left=3, total_xs=5, scatter_xs=0)
+    slab.create_region(material_type='infinite heterog', length=length-l1, num_cells=num_cells/2, x_left=l1, total_xs=5, scatter_xs=0)
 
     perform_transport_in(slab)
 
@@ -93,12 +93,13 @@ def uniform_infinite_medium():
 
 def source_free_pure_absorber():
     length = 10
+    l1 = 3
     num_cells = 100
     num_angles = 4
 
-    slab = Slab(length=length, num_angles=num_angles, left_boundary=10, right_boundary='reflecting', source=0)
-    slab.create_region(material_type='infinite uniform', length=3, num_cells=10, x_left=0, total_xs=1, scatter_xs=0)
-    slab.create_region(material_type='infinite heterog', length=7, num_cells=20, x_left=3, total_xs=1, scatter_xs=0)
+    slab = Slab(num_angles=num_angles, left_boundary=10, right_boundary='reflecting', source=0)
+    slab.create_region(material_type='infinite uniform', length=l1, num_cells=30, x_left=0, total_xs=1, scatter_xs=0)
+    slab.create_region(material_type='infinite heterog', length=length-l1, num_cells=70, x_left=l1, total_xs=1, scatter_xs=0)
 
     perform_transport_in(slab)
 
@@ -107,17 +108,20 @@ def source_free_pure_absorber():
 
 def source_free_half_space():
     length = 20
+    l1 = 8
     num_cells = 100
     num_angles = 4
 
-    slab = Slab(length=length, num_angles=num_angles, left_boundary=10, right_boundary='reflecting', source=0)
-    slab.create_region(material_type='left', length=8, x_left=0, total_xs=1, scatter_xs=0.1)
-    slab.create_region(material_type='right', length=12, x_left=8, total_xs=1, scatter_xs=0)
+    slab = Slab(num_angles=num_angles, left_boundary=10, right_boundary=6, source=0)
+    slab.create_region(material_type='left', length=l1, num_cells=100, x_left=0, total_xs=3, scatter_xs=1.5)
+    slab.create_region(material_type='right', length=length-l1, num_cells=120, x_left=l1, total_xs=1, scatter_xs=0.9)
 
     perform_transport_in(slab)
 
+    print('Left boundary = {0}'.format(slab.scalar_flux[0,0]))
+    print('Right boundary = {0}'.format(slab.scalar_flux[1,slab.num_cells-1]))
     plot_scalar_flux(slab)
 
 
 if __name__ == "__main__":
-    uniform_infinite_medium()
+    source_free_half_space()
