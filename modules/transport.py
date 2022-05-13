@@ -20,11 +20,9 @@ def transport(slab):
     slab.create_material_data_arrays()
 
     converged = False
-    new_scalar_flux = np.ones((2, slab.num_cells))
     source_iterations = 0
     # Perform source iteration to converge on one-group scalar flux
     while not converged:
-        slab.scalar_flux = new_scalar_flux
         source_iterations = source_iterations + 1
 
         total_source = (slab.fixed_source + slab.scattering_source_contribution()) / 2
@@ -32,5 +30,7 @@ def transport(slab):
         new_scalar_flux = calculate_updated_scalar_flux(total_source, slab)
 
         converged = check_scalar_flux_convergence(new_scalar_flux, slab)
+
+        slab.scalar_flux = new_scalar_flux
 
     print(source_iterations)

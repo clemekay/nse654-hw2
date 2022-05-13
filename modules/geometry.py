@@ -61,7 +61,7 @@ class Slab:
     def implement_right_boundary_condition(self, angle):
         if self.right_boundary_condition == 'reflecting':
             corresponding_positive_angle = np.where(self.mu == -self.mu[angle])[0][0]
-            self.right_boundary[angle] = self.left_boundary[corresponding_positive_angle]
+            self.right_boundary[angle] = self.right_boundary[corresponding_positive_angle]
         elif self.right_boundary_condition == 'vacuum':
             self.right_boundary[:] = 0
         return self.right_boundary[angle]
@@ -126,7 +126,7 @@ class Slab:
             for cell in reversed(range(self.num_cells)):
                 one_direction_angular_flux[:, cell] = solve_backward_linear_system()
                 psi_right_edge = one_direction_angular_flux[0, cell]         # Right edge for next cell is left edge of current cell
-            self.left_boundary[angle] = one_direction_angular_flux[0, self.num_cells-1]
+            self.left_boundary[angle] = one_direction_angular_flux[0, 0]
         return one_direction_angular_flux
 
 
