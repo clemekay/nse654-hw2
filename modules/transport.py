@@ -6,7 +6,8 @@ def calculate_updated_scalar_flux(total_source, slab):
     for angle in range(slab.num_angles):
         angular_flux[:, :, angle] = slab.perform_angular_flux_sweep(angle, total_source)
     scalar_flux = np.sum(slab.weight * angular_flux, axis=2)
-    return scalar_flux
+    current = np.sum(slab.weight * slab.mu * angular_flux, axis=2)
+    return scalar_flux, current
 
 
 def check_scalar_flux_convergence(new_scalar_flux, slab):
@@ -28,10 +29,11 @@ def transport(slab):
 
         total_source = (slab.fixed_source + slab.scattering_source_contribution()) / 2
 
-        new_scalar_flux = calculate_updated_scalar_flux(total_source, slab)
+        new_scalar_flux, current = calculate_updated_scalar_flux(total_source, slab)
 
         converged = check_scalar_flux_convergence(new_scalar_flux, slab)
 
         slab.scalar_flux = new_scalar_flux
+        slab.current = current
 
     print(source_iterations)

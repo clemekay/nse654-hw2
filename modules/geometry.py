@@ -19,33 +19,12 @@ class Slab:
         self.total_xs = None
         self.scatter_xs = None
         self.scalar_flux = np.zeros((2,0))
+        self.current = np.zeros((2,0))
         # Boundary definitions
         self.left_boundary_condition = left_boundary
         self.right_boundary_condition = right_boundary
         self.left_boundary = np.zeros(self.num_angles)
         self.right_boundary = np.zeros(self.num_angles)
-
-    def update_boundaries(self):
-        # **** THis is useless and I'm not using it right now ****
-        # Default defined as vacuum boundary
-        if self.left_boundary_condition == 'reflecting':
-            # This assumes that the angles are listed by all positive, then all negative
-            num_angles_half = int(self.num_angles / 2)
-            self.left_boundary[0:num_angles_half] = self.left_boundary[num_angles_half:self.num_angles]
-        elif self.left_boundary_condition == 'vacuum':
-            self.left_boundary[:] = 0
-        else:
-            forwardmost_mu = np.argmax(self.mu)
-            self.left_boundary[forwardmost_mu] = self.left_boundary_condition
-        if self.right_boundary_condition == 'reflecting':
-            # This assumes that the angles are listed by all positive, then all negative
-            num_angles_half = int(self.num_angles / 2)
-            self.right_boundary[num_angles_half:self.num_angles] = self.right_boundary[0:num_angles_half]
-        elif self.right_boundary_condition == 'vacuum':
-            self.right_boundary[:] = 0
-        else:
-            backwardmost_mu = np.argmin(self.mu)
-            self.right_boundary[backwardmost_mu] = self.right_boundary_condition
 
     def implement_left_boundary_condition(self, angle):
         if self.left_boundary_condition == 'reflecting':
@@ -81,6 +60,7 @@ class Slab:
         self.region_boundaries = np.append(self.region_boundaries, x_left)
         self.num_cells += num_cells
         self.scalar_flux = np.append(self.scalar_flux, np.zeros((2, num_cells)), axis=1)
+        self.current = np.append(self.current, np.zeros((2, num_cells)), axis=1)
         self.dx = np.append(self.dx, self.region[self.num_regions-1].dx)
         if np.sum(self.dx) != self.length:
             truncate_final_cell()
