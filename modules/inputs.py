@@ -80,15 +80,31 @@ def uniform_infinite_medium():
     length = 10
     num_cells = 100
     num_angles = 8
-    num_regions = 1
 
-    slab = Slab(length=length, num_cells=num_cells, num_angles=num_angles, num_regions=num_regions,
-                left_boundary='reflecting', right_boundary='reflecting', source=5)
-    slab.create_region(material_type='infinite uniform', length=length, x_left=0, total_xs=1, scatter_xs=0)
+    slab = Slab(length=length, num_cells=num_cells, num_angles=num_angles,
+                left_boundary='reflecting', right_boundary='reflecting', source=10)
+    slab.create_region(material_type='infinite uniform', length=length / 2, x_left=0, total_xs=2, scatter_xs=0)
+    slab.create_region(material_type='infinite heterog', length=length / 2, x_left=3, total_xs=5, scatter_xs=0)
 
     perform_transport_in(slab)
 
     plot_scalar_flux(slab)
 
+
+def source_free_pure_absorber():
+    length = 10
+    num_cells = 100
+    num_angles = 8
+
+    slab = Slab(length=length, num_cells=num_cells, num_angles=num_angles,
+                left_boundary=5, right_boundary='reflecting', source=0)
+    slab.create_region(material_type='infinite uniform', length=length / 2, x_left=0, total_xs=1, scatter_xs=0)
+    slab.create_region(material_type='infinite heterog', length=length / 2, x_left=3, total_xs=12, scatter_xs=0)
+
+    perform_transport_in(slab)
+
+    plot_scalar_flux(slab)
+
+
 if __name__ == "__main__":
-    uniform_infinite_medium()
+    source_free_pure_absorber()

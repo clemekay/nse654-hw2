@@ -2,13 +2,12 @@ import numpy as np
 
 
 class Slab:
-    def __init__(self, length, num_cells, num_angles, num_regions, left_boundary, right_boundary, source):
+    def __init__(self, length, num_cells, num_angles, left_boundary, right_boundary, source):
         self.tolerance = 1e-6
         # Spacial parameters
         self.length = length
         self.num_cells = num_cells
         self.dx = self.length / self.num_cells
-        self.num_regions = num_regions
         self.region = []
         self.region_boundaries = np.array([])
         # Angular parameters
@@ -138,4 +137,3 @@ class Region:
         self.right_edge = self.left_edge + self.length
         self.total_xs = total_xs
         self.scatter_xs = scatter_xs
-
