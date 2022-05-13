@@ -78,13 +78,13 @@ def optically_thick_diffusive_problem():
 
 def uniform_infinite_medium():
     length = 10
+    l1 = 3
     num_cells = 100
     num_angles = 8
 
-    slab = Slab(length=length, num_cells=num_cells, num_angles=num_angles,
-                left_boundary='reflecting', right_boundary='reflecting', source=10)
-    slab.create_region(material_type='infinite uniform', length=length / 2, x_left=0, total_xs=2, scatter_xs=0)
-    slab.create_region(material_type='infinite heterog', length=length / 2, x_left=3, total_xs=5, scatter_xs=0)
+    slab = Slab(num_angles=num_angles, left_boundary='reflecting', right_boundary='reflecting', source=10)
+    slab.create_region(material_type='infinite uniform', length=l1, num_cells=num_cells/2, x_left=0, total_xs=2, scatter_xs=0)
+    slab.create_region(material_type='infinite heterog', length=length-l1, num_cells=num_cells/2, x_left=3, total_xs=5, scatter_xs=0)
 
     perform_transport_in(slab)
 
@@ -94,12 +94,25 @@ def uniform_infinite_medium():
 def source_free_pure_absorber():
     length = 10
     num_cells = 100
-    num_angles = 8
+    num_angles = 4
 
-    slab = Slab(length=length, num_cells=num_cells, num_angles=num_angles,
-                left_boundary=5, right_boundary='reflecting', source=0)
-    slab.create_region(material_type='infinite uniform', length=length / 2, x_left=0, total_xs=1, scatter_xs=0)
-    slab.create_region(material_type='infinite heterog', length=length / 2, x_left=3, total_xs=12, scatter_xs=0)
+    slab = Slab(length=length, num_angles=num_angles, left_boundary=10, right_boundary='reflecting', source=0)
+    slab.create_region(material_type='infinite uniform', length=3, num_cells=10, x_left=0, total_xs=1, scatter_xs=0)
+    slab.create_region(material_type='infinite heterog', length=7, num_cells=20, x_left=3, total_xs=1, scatter_xs=0)
+
+    perform_transport_in(slab)
+
+    plot_scalar_flux(slab)
+
+
+def source_free_half_space():
+    length = 20
+    num_cells = 100
+    num_angles = 4
+
+    slab = Slab(length=length, num_angles=num_angles, left_boundary=10, right_boundary='reflecting', source=0)
+    slab.create_region(material_type='left', length=8, x_left=0, total_xs=1, scatter_xs=0.1)
+    slab.create_region(material_type='right', length=12, x_left=8, total_xs=1, scatter_xs=0)
 
     perform_transport_in(slab)
 
@@ -107,4 +120,4 @@ def source_free_pure_absorber():
 
 
 if __name__ == "__main__":
-    source_free_pure_absorber()
+    uniform_infinite_medium()

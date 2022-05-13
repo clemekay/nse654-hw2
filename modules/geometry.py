@@ -2,14 +2,15 @@ import numpy as np
 
 
 class Slab:
-    def __init__(self, length, num_cells, num_angles, left_boundary, right_boundary, source):
+    def __init__(self, num_angles, left_boundary, right_boundary, source):
         self.tolerance = 1e-6
         # Spacial parameters
-        self.length = length
-        self.num_cells = num_cells
-        self.dx = self.length / self.num_cells
+        self.length = 0
+        self.num_cells = 0
+        self.dx = np.array([])
         self.region = []
         self.region_boundaries = np.array([])
+        self.num_regions = 0
         # Angular parameters
         self.num_angles = num_angles
         self.mu, self.weight = np.polynomial.legendre.leggauss(num_angles)
@@ -17,7 +18,7 @@ class Slab:
         self.fixed_source = source
         self.total_xs = None
         self.scatter_xs = None
-        self.scalar_flux = np.ones((2, num_cells))
+        self.scalar_flux = np.zeros((2,0))
         # Boundary definitions
         self.left_boundary_condition = left_boundary
         self.right_boundary_condition = right_boundary
@@ -55,6 +56,9 @@ class Slab:
         else:   # Incident
             forwardmost_mu = np.argmax(self.mu)
             self.left_boundary[forwardmost_mu] = self.left_boundary_condition
+            if self.mu[angle] != self.mu[forwardmost_mu]:
+                corresponding_negative_angle = np.where(self.mu == -self.mu[angle])[0][0]
+                self.left_boundary[angle] = self.left_boundary[corresponding_negative_angle]
         return self.left_boundary[angle]
 
     def implement_right_boundary_condition(self, angle):
@@ -63,22 +67,37 @@ class Slab:
             self.right_boundary[angle] = self.right_boundary[corresponding_positive_angle]
         elif self.right_boundary_condition == 'vacuum':
             self.right_boundary[:] = 0
+        else:   # Incident
+            backwardmost_mu = np.argmin(self.mu)
+            self.right_boundary[backwardmost_mu] = self.right_boundary_condition
         return self.right_boundary[angle]
 
-    def create_region(self, material_type, length, x_left, total_xs, scatter_xs):
-        self.region.append(Region(material_type, length, x_left, total_xs, scatter_xs))
+    def create_region(self, material_type, length, num_cells, x_left, total_xs, scatter_xs):
+        def truncate_final_cell():
+            all_but_final_cell = np.sum(self.dx[0:self.num_cells-1])
+            self.dx[self.num_cells-1] = self.length - all_but_final_cell
+
+        num_cells = int(num_cells)
+        self.length += length
+        self.num_regions += 1
+        self.region.append(Region(material_type, length, num_cells, x_left, total_xs, scatter_xs))
         self.region_boundaries = np.append(self.region_boundaries, x_left)
+        self.num_cells += num_cells
+        self.scalar_flux = np.append(self.scalar_flux, np.zeros((2, num_cells)), axis=1)
+        self.dx = np.append(self.dx, self.region[self.num_regions-1].dx)
+        if np.sum(self.dx) != self.length:
+            truncate_final_cell()
 
     def create_material_data_arrays(self):
         self.total_xs = np.zeros(self.num_cells)
         self.scatter_xs = np.zeros(self.num_cells)
 
-        x = self.dx / 2
+        x = self.dx[0] / 2
         for i in range(self.num_cells):
             which_region = np.searchsorted(self.region_boundaries, x) - 1
             self.total_xs[i] = self.region[which_region].total_xs
             self.scatter_xs[i] = self.region[which_region].scatter_xs
-            x = x + self.dx
+            x = x + self.dx[i]
 
     def scattering_source_contribution(self):
         scattering_source = self.scatter_xs * self.scalar_flux
@@ -86,12 +105,12 @@ class Slab:
 
     def perform_angular_flux_sweep(self, angle, total_source):
         def solve_forward_linear_system():
-            a_coeff = 2 * self.total_xs[cell] * self.dx + 3 * self.mu[angle]
-            b_coeff = self.total_xs[cell] * self.dx + 3 * self.mu[angle]
-            c_coeff = self.dx * (2*QL[cell] + QR[cell]) + 6 * self.mu[angle] * psi_left_edge
-            d_coeff = self.total_xs[cell] * self.dx - 3 * self.mu[angle]
-            e_coeff = 2 * self.total_xs[cell] * self.dx + 3 * self.mu[angle]
-            f_coeff = self.dx * (QL[cell] + 2*QR[cell])
+            a_coeff = 2 * self.total_xs[cell] * self.dx[cell] + 3 * self.mu[angle]
+            b_coeff = self.total_xs[cell] * self.dx[cell] + 3 * self.mu[angle]
+            c_coeff = self.dx[cell] * (2*QL[cell] + QR[cell]) + 6 * self.mu[angle] * psi_left_edge
+            d_coeff = self.total_xs[cell] * self.dx[cell] - 3 * self.mu[angle]
+            e_coeff = 2 * self.total_xs[cell] * self.dx[cell] + 3 * self.mu[angle]
+            f_coeff = self.dx[cell] * (QL[cell] + 2*QR[cell])
 
             coefficient_matrix = np.array([[a_coeff, b_coeff], [d_coeff, e_coeff]])
             rhs = np.array([c_coeff, f_coeff])
@@ -99,12 +118,12 @@ class Slab:
             return LD_angular_flux
 
         def solve_backward_linear_system():
-            a_coeff = 2 * self.total_xs[cell] * self.dx - 3 * self.mu[angle]
-            b_coeff = self.total_xs[cell] * self.dx + 3 * self.mu[angle]
-            c_coeff = self.dx * (2*QL[cell] + QR[cell])
-            d_coeff = self.total_xs[cell] * self.dx - 3 * self.mu[angle]
-            e_coeff = 2 * self.total_xs[cell] * self.dx - 3 * self.mu[angle]
-            f_coeff = self.dx * (QL[cell] + 2*QR[cell]) - 6 * self.mu[angle] * psi_right_edge
+            a_coeff = 2 * self.total_xs[cell] * self.dx[cell] - 3 * self.mu[angle]
+            b_coeff = self.total_xs[cell] * self.dx[cell] + 3 * self.mu[angle]
+            c_coeff = self.dx[cell] * (2*QL[cell] + QR[cell])
+            d_coeff = self.total_xs[cell] * self.dx[cell] - 3 * self.mu[angle]
+            e_coeff = 2 * self.total_xs[cell] * self.dx[cell] - 3 * self.mu[angle]
+            f_coeff = self.dx[cell] * (QL[cell] + 2*QR[cell]) - 6 * self.mu[angle] * psi_right_edge
 
             coefficient_matrix = np.array([[a_coeff, b_coeff], [d_coeff, e_coeff]])
             rhs = np.array([c_coeff, f_coeff])
@@ -130,9 +149,11 @@ class Slab:
 
 
 class Region:
-    def __init__(self, material_type, length, x_left, total_xs, scatter_xs):
+    def __init__(self, material_type, length, num_cells, x_left, total_xs, scatter_xs):
         self.material = material_type
         self.length = length
+        self.num_cells = int(num_cells)
+        self.dx = np.ones(self.num_cells) * (self.length / self.num_cells)
         self.left_edge = x_left
         self.right_edge = self.left_edge + self.length
         self.total_xs = total_xs

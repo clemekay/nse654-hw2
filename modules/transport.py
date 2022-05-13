@@ -24,6 +24,7 @@ def transport(slab):
     # Perform source iteration to converge on one-group scalar flux
     while not converged:
         source_iterations = source_iterations + 1
+        print(source_iterations)
 
         total_source = (slab.fixed_source + slab.scattering_source_contribution()) / 2
 
