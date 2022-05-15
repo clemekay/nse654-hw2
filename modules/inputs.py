@@ -50,6 +50,19 @@ def optically_thick_diffusive_problem():
     plot_current(slab)
 
 
+def larsen_morel_problem():
+    length = 11
+    l1 = 1
+
+    slab = Slab(num_angles=16, left_boundary='isotropic', right_boundary='vacuum', source=0, left_strength=1)
+    slab.create_region(material_type='pure absorber', length=l1, num_cells=10, x_left=0, total_xs=2, scatter_xs=0)
+    slab.create_region(material_type='pure scatterer', length=length-l1, num_cells=10, x_left=l1, total_xs=100, scatter_xs=50)
+
+    perform_transport_in(slab)
+
+    plot_scalar_flux(slab)
+
+
 def uniform_infinite_medium():
     length = 10
     l1 = 3
@@ -83,11 +96,10 @@ def source_free_pure_absorber():
 def source_free_half_space():
     length = 20
     l1 = 8
-    num_cells = 100
     num_angles = 4
 
-    slab = Slab(num_angles=num_angles, left_boundary=10, right_boundary=6, source=0)
-    slab.create_region(material_type='left', length=l1, num_cells=100, x_left=0, total_xs=3, scatter_xs=1.5)
+    slab = Slab(num_angles=num_angles, left_boundary='beam', right_boundary='beam', source=0, left_strength=10, right_strength=6)
+    slab.create_region(material_type='left', length=l1, num_cells=80, x_left=0, total_xs=3, scatter_xs=1.5)
     slab.create_region(material_type='right', length=length-l1, num_cells=120, x_left=l1, total_xs=1, scatter_xs=0.9)
 
     perform_transport_in(slab)
@@ -98,4 +110,4 @@ def source_free_half_space():
 
 
 if __name__ == "__main__":
-    optically_thick_diffusive_problem()
+    source_free_half_space()

@@ -3,7 +3,8 @@ import numpy as np
 
 
 def plot_scalar_flux(slab):
-    slab_x_values = np.linspace(0, slab.length, slab.num_cells+1)
+    slab_x_values = np.append(0, slab.dx)
+    slab_x_values = np.cumsum(slab_x_values)
     for i in range(slab.num_cells-1):
         cell_x_values = slab_x_values[i:i+2]
         cell_y_values = slab.scalar_flux[:,i]

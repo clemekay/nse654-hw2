@@ -2,7 +2,7 @@ import numpy as np
 
 
 class Slab:
-    def __init__(self, num_angles, left_boundary, right_boundary, source):
+    def __init__(self, num_angles, left_boundary, right_boundary, source, left_strength=None, right_strength=None):
         self.tolerance = 1e-6
         # Spacial parameters
         self.length = 0
@@ -23,7 +23,9 @@ class Slab:
         # Boundary definitions
         self.left_boundary_condition = left_boundary
         self.right_boundary_condition = right_boundary
-        self.left_boundary = np.zeros(self.num_angles)
+        self.left_incident_strength = left_strength
+        self.right_incident_strength = right_strength
+        self.left_boundary = np.ones(self.num_angles)
         self.right_boundary = np.zeros(self.num_angles)
 
     def implement_left_boundary_condition(self, angle):
@@ -32,9 +34,13 @@ class Slab:
             self.left_boundary[angle] = self.left_boundary[corresponding_negative_angle]
         elif self.left_boundary_condition == 'vacuum':
             self.left_boundary[:] = 0
-        else:   # Incident
+        elif self.left_boundary_condition == 'beam':
             forwardmost_mu = np.argmax(self.mu)
-            self.left_boundary[forwardmost_mu] = self.left_boundary_condition
+            self.left_boundary[forwardmost_mu] = self.left_incident_strength
+        elif self.left_boundary_condition == 'isotropic':
+            # Assumes angles are listed from -1 to 1
+            half_num_angles = int(self.num_angles / 2)
+            self.left_boundary[half_num_angles:self.num_angles] = self.left_incident_strength
         return self.left_boundary[angle]
 
     def implement_right_boundary_condition(self, angle):
@@ -43,9 +49,12 @@ class Slab:
             self.right_boundary[angle] = self.right_boundary[corresponding_positive_angle]
         elif self.right_boundary_condition == 'vacuum':
             self.right_boundary[:] = 0
-        else:   # Incident
+        elif self.right_boundary_condition == 'beam':
             backwardmost_mu = np.argmin(self.mu)
-            self.right_boundary[backwardmost_mu] = self.right_boundary_condition
+            self.right_boundary[backwardmost_mu] = self.right_incident_strength
+        elif self.right_boundary_condition == 'isotropic':
+            half_num_angles = int(self.num_angles / 2)
+            self.right_boundary[0:half_num_angles] = self.right_incident_strength
         return self.right_boundary[angle]
 
     def create_region(self, material_type, length, num_cells, x_left, total_xs, scatter_xs):
