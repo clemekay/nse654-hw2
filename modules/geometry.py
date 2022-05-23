@@ -1,6 +1,13 @@
 import numpy as np
 
 
+def boundary_condition_validity(boundary_condition):
+    if boundary_condition == 'reflecting' or boundary_condition == 'vacuum' or boundary_condition == 'beam' or boundary_condition == 'isotropic':
+        return True
+    else:
+        return False
+
+
 class Slab:
     def __init__(self, num_angles, left_boundary, right_boundary, source, left_strength=None, right_strength=None):
         self.tolerance = 1e-6
@@ -15,7 +22,7 @@ class Slab:
         self.num_angles = num_angles
         self.mu, self.weight = np.polynomial.legendre.leggauss(num_angles)
         # Cell-wise information
-        self.fixed_source = source
+        self.fixed_source = source / num_angles
         self.total_xs = None
         self.scatter_xs = None
         self.scalar_flux = np.zeros((2,0))
@@ -27,6 +34,9 @@ class Slab:
         self.right_incident_strength = right_strength
         self.left_boundary = np.ones(self.num_angles)
         self.right_boundary = np.zeros(self.num_angles)
+
+        assert boundary_condition_validity(self.left_boundary_condition) is True, "Unreadable left boundary condition"
+        assert boundary_condition_validity(self.right_boundary_condition) is True, "Unreadable right boundary condition"
 
     def implement_left_boundary_condition(self, angle):
         if self.left_boundary_condition == 'reflecting':
@@ -55,6 +65,9 @@ class Slab:
         elif self.right_boundary_condition == 'isotropic':
             half_num_angles = int(self.num_angles / 2)
             self.right_boundary[0:half_num_angles] = self.right_incident_strength
+        else:
+            print('Incorrect boundary conditions')
+
         return self.right_boundary[angle]
 
     def create_region(self, material_type, length, num_cells, x_left, total_xs, scatter_xs):
