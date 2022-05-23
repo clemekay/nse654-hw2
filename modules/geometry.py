@@ -9,7 +9,7 @@ def boundary_condition_validity(boundary_condition):
 
 
 class Slab:
-    def __init__(self, num_angles, left_boundary, right_boundary, source, left_strength=None, right_strength=None):
+    def __init__(self, num_angles, left_boundary, right_boundary, left_strength=None, right_strength=None):
         self.tolerance = 1e-6
         # Spacial parameters
         self.length = 0
@@ -22,7 +22,7 @@ class Slab:
         self.num_angles = num_angles
         self.mu, self.weight = np.polynomial.legendre.leggauss(num_angles)
         # Cell-wise information
-        self.fixed_source = source / num_angles
+        self.fixed_source = np.zeros((2,0))
         self.total_xs = None
         self.scatter_xs = None
         self.scalar_flux = np.zeros((2,0))
@@ -70,7 +70,7 @@ class Slab:
 
         return self.right_boundary[angle]
 
-    def create_region(self, material_type, length, num_cells, x_left, total_xs, scatter_xs):
+    def create_region(self, material_type, length, num_cells, x_left, total_xs, scatter_xs, source):
         def truncate_final_cell():
             all_but_final_cell = np.sum(self.dx[0:self.num_cells-1])
             self.dx[self.num_cells-1] = self.length - all_but_final_cell
@@ -79,9 +79,10 @@ class Slab:
         self.length += length
         self.num_regions += 1
         self.region.append(Region(material_type, length, num_cells, x_left, total_xs, scatter_xs))
-        self.region_boundaries = np.append(self.region_boundaries, x_left)
+        self.region_boundaries = np.append(self.region_boundaries, self.length)
         self.num_cells += num_cells
         self.scalar_flux = np.append(self.scalar_flux, np.zeros((2, num_cells)), axis=1)
+        self.fixed_source = np.append(self.fixed_source, np.ones((2, num_cells))*source, axis=1)
         self.current = np.append(self.current, np.zeros((2, num_cells)), axis=1)
         self.dx = np.append(self.dx, self.region[self.num_regions-1].dx)
         if np.sum(self.dx) != self.length:
@@ -93,7 +94,7 @@ class Slab:
 
         x = self.dx[0] / 2
         for i in range(self.num_cells):
-            which_region = np.searchsorted(self.region_boundaries, x) - 1
+            which_region = np.searchsorted(self.region_boundaries, x)
             self.total_xs[i] = self.region[which_region].total_xs
             self.scatter_xs[i] = self.region[which_region].scatter_xs
             x = x + self.dx[i]

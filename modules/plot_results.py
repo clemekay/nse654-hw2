@@ -21,3 +21,11 @@ def plot_current(slab):
         plt.plot(cell_x_values, cell_y_values)
     plt.title('Current')
     plt.show()
+
+
+def do_results_things(slab):
+    print('Left boundary = {0}'.format(slab.scalar_flux[0, 0]))
+    print('Right boundary = {0}'.format(slab.scalar_flux[1, slab.num_cells - 1]))
+    plot_scalar_flux(slab)
+    plot_current(slab)
+
