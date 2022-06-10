@@ -32,7 +32,7 @@ def fetch_SN_quadrature(quadrature_N):
         raise Exception('Available quadratures: S4, S6, S8, S12, S16.')
 
     weight_index = (weight_index - 1).astype(int)
-    points = int(quadrature_N*(quadrature_N+2)/2)
+    points = int(quadrature_N*(quadrature_N+2)/8)
     mu = np.zeros(points)
     eta = np.zeros(points)
     weight = np.zeros(points)
