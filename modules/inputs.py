@@ -93,5 +93,6 @@ def reeds_problem():
     print(slab.num_cells)
     do_results_things(slab)
 
+
 if __name__ == "__main__":
     source_free_half_space()
